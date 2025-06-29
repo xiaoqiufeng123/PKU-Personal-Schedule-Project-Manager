@@ -12,6 +12,12 @@
 #include <QTextCharFormat>
 #include <QSet>
 #include <QLabel> // 确保包含
+#include <QMovie> // 引入 QMovie
+#include <QWidget>
+#include <QLabel>
+#include <QTimer>
+#include <QStringList>
+#include <QRandomGenerator>
 
 #include "DailyTask.h"
 #include "DailyTaskDialog.h"
@@ -44,9 +50,15 @@ private slots:
     void onAddDailyTaskClicked();
     void onReminderButtonClicked(); // 【整合】确保提醒按钮的槽函数声明存在
 
+    void onTypewriterTimeout();
+
 private:
     void setupUiLooks();
     void updateCalendarHighlights();
+
+    // 打字机相关函数
+    void startTypewriter(int intervalMs = 120);
+    void selectNextPhrase();
 
     Ui::MainWindow *ui;
     QSplitter *splitter;
@@ -66,6 +78,19 @@ private:
     CourseScheduleWindow *courseWindow;
     StudySessionDialog *studyDialog;
     StatisticsWindow *statsWindow;
+
+    // 新增 GIF 播放控件
+    QLabel *gifLabel;
+    QMovie *gifMovie;
+
+    // 顶部打字机
+    QLabel      *headerLabel;
+    QTimer      *typewriterTimer;
+    QStringList  phraseList;      // 语句库
+    QString      currentPhrase;   // 当前正在打/删的句子
+    int          typewriterPos;   // 在 currentPhrase 中的位置
+    bool         deletingPhase;   // false=打字，true=删除
+
 };
 
 #endif // MAINWINDOW_H

@@ -10,6 +10,7 @@
 #include "DatabaseManager.h"
 #include <QLabel>
 #include <QMessageBox>
+#include <QMovie> // 引入 QMovie
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
@@ -17,12 +18,44 @@ MainWindow::MainWindow(QWidget *parent)
     , courseWindow(nullptr)
     , studyDialog(nullptr)
     , statsWindow(nullptr)
+    , headerLabel(nullptr)
+    , typewriterTimer(nullptr)
+    , typewriterPos(0)
+    , deletingPhase(false)
 {
     ui->setupUi(this);
     setWindowTitle("个人学习助手");
 
     setupUiLooks();
 
+    // 准备语句库
+    phraseList = {
+        "Keep your determination!",
+        "You are filled with the power of determination.",
+        "It's a beautiful day outside...",
+        "Geeetttt dunked on~",
+        "Beware of the man who speaks in hands.",
+        "Debugging is fun!",
+        "Stay curious, code boldly!",
+        "Every bug is a lesson in disguise.",
+        "One step at a time, one line at a time.",
+        "Compile your dreams into reality.",
+        "Embrace the challenge, enjoy the debug.",
+        "Logic will take you from A to B.",
+        "Creativity will take you everywhere.",
+        "Press on; the summit awaits.",
+        "Your code today shapes tomorrow’s world."
+    };
+
+
+    // 创建并启动定时器
+    typewriterTimer = new QTimer(this);
+    connect(typewriterTimer, &QTimer::timeout,
+            this,           &MainWindow::onTypewriterTimeout);
+
+    // 选一句并开始打字
+    selectNextPhrase();
+    startTypewriter(120);
     if (!DatabaseManager::instance().init())
     {
         qDebug() << "数据库初始化失败";
@@ -87,6 +120,27 @@ void MainWindow::setupUiLooks()
     leftLayout->addWidget(reminderButton);
     leftLayout->addStretch();
 
+    // **在这里插入 GIF 区域 (红框)**
+    // 先占位一个 stretch，使按钮都贴顶部
+    leftLayout->addStretch();
+
+    // 创建 QLabel 和 QMovie
+    gifLabel = new QLabel;
+    gifLabel->setAlignment(Qt::AlignCenter);
+    // 可根据实际需要调整大小
+    gifLabel->setFixedSize(160, 160);
+
+    gifMovie = new QMovie(":/images/lancer_main_window_160.gif");
+    if (!gifMovie->isValid()) {
+        qDebug() << "错误：无法加载 GIF 文件";
+    } else {
+        gifLabel->setMovie(gifMovie);
+        gifMovie->setCacheMode(QMovie::CacheAll);
+        gifMovie->start();
+    }
+    // 把 gifLabel 加入左侧布局
+    leftLayout->addWidget(gifLabel);
+
     QWidget *rightPane = new QWidget();
     QHBoxLayout *rightTopLayout = new QHBoxLayout();
     rightTopLayout->addWidget(studyMotivationLabel);
@@ -105,10 +159,19 @@ void MainWindow::setupUiLooks()
     splitter->setStretchFactor(1, 1);
     splitter->setHandleWidth(2);
 
-    QHBoxLayout *mainLayout = new QHBoxLayout(this);
-    mainLayout->addWidget(splitter);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    setLayout(mainLayout);
+    // 1) 在最外层布局之前，先创建 headerLabel
+    headerLabel = new QLabel(this);
+    headerLabel->setAlignment(Qt::AlignCenter);
+    headerLabel->setFixedHeight(50);
+    headerLabel->setStyleSheet("font-size:20px;");
+
+    // 2) 用一个 QVBoxLayout 把 headerLabel 和原来的 splitter 串起来
+    QVBoxLayout *rootLayout = new QVBoxLayout(this);
+    rootLayout->setContentsMargins(0,0,0,0);
+    rootLayout->setSpacing(0);
+    rootLayout->addWidget(headerLabel);
+    rootLayout->addWidget(splitter, 1);
+    setLayout(rootLayout);
 
     // --- 4. 连接信号和槽 (代码与之前相同) ---
     connect(courseScheduleButton, &QPushButton::clicked, this, &MainWindow::onCourseScheduleButtonClicked);
@@ -283,4 +346,60 @@ void MainWindow::onAddDailyTaskClicked()
     dialog.exec();
     onDateSelected(currentSelectedDate);
     updateCalendarHighlights();
+}
+
+// 从 phraseList 随机选一句，重置状态
+void MainWindow::selectNextPhrase()
+{
+    int idx = QRandomGenerator::global()->bounded(phraseList.size());
+    currentPhrase  = phraseList.at(idx);
+    typewriterPos  = 0;
+    deletingPhase  = false;
+    headerLabel->clear();
+}
+
+// 启动（或重启）打字机定时器
+void MainWindow::startTypewriter(int intervalMs)
+{
+    if (typewriterTimer->isActive())
+        typewriterTimer->stop();
+    typewriterTimer->start(intervalMs);
+}
+
+// 定时器回调：打字或删除一步
+void MainWindow::onTypewriterTimeout()
+{
+    // ==== 打字阶段 ====
+    if (!deletingPhase) {
+        if (typewriterPos < currentPhrase.length()) {
+            // 追加下一个字符
+            headerLabel->setText(
+                headerLabel->text() + currentPhrase.at(typewriterPos)
+                );
+            ++typewriterPos;
+        } else {
+            // 打完了：暂停一下，再进入删除阶段
+            typewriterTimer->stop();
+            QTimer::singleShot(1000, this, [this]() {
+                deletingPhase = true;
+                startTypewriter(30); // 删除字符的速度 30ms
+            });
+        }
+    }
+    // ==== 删除阶段 ====
+    else {
+        QString txt = headerLabel->text();
+        if (!txt.isEmpty()) {
+            // 每次去掉最后一个字符
+            txt.chop(1);
+            headerLabel->setText(txt);
+        } else {
+            // 全删完了：暂停一下，再开始下一句
+            typewriterTimer->stop();
+            QTimer::singleShot(500, this, [this]() {
+                selectNextPhrase();
+                startTypewriter(90);
+            });
+        }
+    }
 }

@@ -20,7 +20,7 @@ StudySessionDialog::StudySessionDialog(QWidget *parent)
     gifLabel = new QLabel(this);
     // 在这里加载您的 GIF。请确保 ":/images/Ralsei_emote.gif" 存在于您的 .qrc 文件中
     // 假设您已经将 Ralsei_emote.gif 添加到了资源的 /images 路径下
-    animation = new QMovie(":/images/Ralsei_emote.gif", QByteArray(), this);
+    animation = new QMovie(":/images/Ralsei_study_dialog.gif", QByteArray(), this);
     if (!animation->isValid()) {
         qDebug() << "错误：无法加载 GIF 文件: :/images/lancer.gif";
         // 如果 GIF 加载失败，可以添加备用方案或错误处理
