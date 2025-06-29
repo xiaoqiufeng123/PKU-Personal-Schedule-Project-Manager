@@ -10,7 +10,7 @@
 #include "DatabaseManager.h"
 #include <QLabel>
 #include <QMessageBox>
-#include <QMovie> // 引入 QMovie
+#include <QMovie> // 用于加载GIF动画
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
@@ -26,45 +26,38 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     setWindowTitle("个人学习助手");
 
+    // 初始化UI外观
     setupUiLooks();
 
-    // 准备语句库
+    // 初始化打字机效果的语句库
     phraseList = {
         "Keep your determination!",
         "You are filled with the power of determination.",
         "It's a beautiful day outside...",
         "Geeetttt dunked on~",
         "Beware of the man who speaks in hands.",
-        "Debugging is fun!",
-        "Stay curious, code boldly!",
-        "Every bug is a lesson in disguise.",
-        "One step at a time, one line at a time.",
-        "Compile your dreams into reality.",
-        "Embrace the challenge, enjoy the debug.",
-        "Logic will take you from A to B.",
-        "Creativity will take you everywhere.",
-        "Press on; the summit awaits.",
-        "Your code today shapes tomorrow’s world."
+        "Debugging is fun!"
     };
 
-
-    // 创建并启动定时器
+    // 创建并启动打字机效果定时器
     typewriterTimer = new QTimer(this);
     connect(typewriterTimer, &QTimer::timeout,
             this,           &MainWindow::onTypewriterTimeout);
 
-    // 选一句并开始打字
-    selectNextPhrase();
-    startTypewriter(120);
-    if (!DatabaseManager::instance().init())
-    {
+    // 初始化数据库
+    if (!DatabaseManager::instance().init()) {
         qDebug() << "数据库初始化失败";
     }
 
+    // 设置当前日期并更新UI
     currentSelectedDate = QDate::currentDate();
     updateCalendarHighlights();
     onDateSelected(currentSelectedDate);
     calendarWidget->setSelectedDate(currentSelectedDate);
+
+    // 启动打字机效果
+    selectNextPhrase();
+    startTypewriter(120);
 }
 
 MainWindow::~MainWindow()
@@ -74,7 +67,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::setupUiLooks()
 {
-    // --- 1. 创建控件 (代码与之前相同) ---
+    // 创建主界面控件
     courseScheduleButton = new QPushButton(" 课表与教室");
     studySessionButton = new QPushButton(" 开始自习");
     statisticsButton = new QPushButton(" 学习统计");
@@ -84,31 +77,32 @@ void MainWindow::setupUiLooks()
     detailTextEdit = new QTextEdit();
     detailTextEdit->setReadOnly(true);
 
+    // 创建学习激励标签
     QLabel *studyMotivationLabel = new QLabel();
     studyMotivationLabel->setAlignment(Qt::AlignCenter);
-    studyMotivationLabel->setText("<span style='color:red; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>你</span><br>"
-                                  "<span style='color:green; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>今</span><br>"
-                                  "<span style='color:blue; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>天</span><br>"
-                                  "<span style='color:purple; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>学</span><br>"
-                                  "<span style='color:orange; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>习</span><br>"
-                                  "<span style='color:#008080; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>了</span><br>"
-                                  "<span style='color:#FF69B4; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>吗</span><span style='color:#800080; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>？</span>");
+    studyMotivationLabel->setText(
+        "<span style='color:red; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>你</span><br>"
+        "<span style='color:green; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>今</span><br>"
+        "<span style='color:blue; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>天</span><br>"
+        "<span style='color:purple; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>学</span><br>"
+        "<span style='color:orange; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>习</span><br>"
+        "<span style='color:#008080; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>了</span><br>"
+        "<span style='color:#FF69B4; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>吗</span>"
+        "<span style='color:#800080; font-size: 20px; font-family: \"Comic Sans MS\", cursive;'>？</span>"
+        );
 
-    // --- 2. 【关键修正】通过C++代码设置日历格式 ---
-    // 禁用默认的垂直表头（周数）
+    // 配置日历控件
     calendarWidget->setVerticalHeaderFormat(QCalendarWidget::NoVerticalHeader);
-
-    // 创建一个黑色字体的文本格式
     QTextCharFormat blackTextFormat;
-    blackTextFormat.setForeground(Qt::black); // 设置颜色为黑色
-
-    // 将周一到周日的所有文字格式都强制设置为黑色，覆盖掉默认的红色周末
+    blackTextFormat.setForeground(Qt::black);
     for (int day = 1; day <= 7; ++day) {
-        calendarWidget->setWeekdayTextFormat(static_cast<Qt::DayOfWeek>(day), blackTextFormat);
+        calendarWidget->setWeekdayTextFormat(
+            static_cast<Qt::DayOfWeek>(day),
+            blackTextFormat
+            );
     }
 
-
-    // --- 3. 布局重构 (代码与之前相同) ---
+    // 创建左侧面板布局
     QWidget *leftPane = new QWidget();
     leftPane->setFixedWidth(200);
     QVBoxLayout *leftLayout = new QVBoxLayout(leftPane);
@@ -120,27 +114,21 @@ void MainWindow::setupUiLooks()
     leftLayout->addWidget(reminderButton);
     leftLayout->addStretch();
 
-    // **在这里插入 GIF 区域 (红框)**
-    // 先占位一个 stretch，使按钮都贴顶部
-    leftLayout->addStretch();
-
-    // 创建 QLabel 和 QMovie
+    // 创建并配置GIF标签
     gifLabel = new QLabel;
     gifLabel->setAlignment(Qt::AlignCenter);
-    // 可根据实际需要调整大小
     gifLabel->setFixedSize(160, 160);
-
     gifMovie = new QMovie(":/images/lancer_main_window_160.gif");
-    if (!gifMovie->isValid()) {
-        qDebug() << "错误：无法加载 GIF 文件";
-    } else {
+    if (gifMovie->isValid()) {
         gifLabel->setMovie(gifMovie);
         gifMovie->setCacheMode(QMovie::CacheAll);
         gifMovie->start();
+    } else {
+        qDebug() << "错误：无法加载 GIF 文件";
     }
-    // 把 gifLabel 加入左侧布局
     leftLayout->addWidget(gifLabel);
 
+    // 创建右侧面板布局
     QWidget *rightPane = new QWidget();
     QHBoxLayout *rightTopLayout = new QHBoxLayout();
     rightTopLayout->addWidget(studyMotivationLabel);
@@ -153,35 +141,42 @@ void MainWindow::setupUiLooks()
     rightLayout->setSpacing(10);
     rightLayout->setContentsMargins(10, 10, 10, 10);
 
+    // 创建主分割器
     splitter = new QSplitter(Qt::Horizontal, this);
     splitter->addWidget(leftPane);
     splitter->addWidget(rightPane);
     splitter->setStretchFactor(1, 1);
     splitter->setHandleWidth(2);
 
-    // 1) 在最外层布局之前，先创建 headerLabel
+    // 创建顶部标题标签
     headerLabel = new QLabel(this);
     headerLabel->setAlignment(Qt::AlignCenter);
     headerLabel->setFixedHeight(50);
     headerLabel->setStyleSheet("font-size:20px;");
 
-    // 2) 用一个 QVBoxLayout 把 headerLabel 和原来的 splitter 串起来
+    // 设置主布局
     QVBoxLayout *rootLayout = new QVBoxLayout(this);
-    rootLayout->setContentsMargins(0,0,0,0);
+    rootLayout->setContentsMargins(0, 0, 0, 0);
     rootLayout->setSpacing(0);
     rootLayout->addWidget(headerLabel);
     rootLayout->addWidget(splitter, 1);
     setLayout(rootLayout);
 
-    // --- 4. 连接信号和槽 (代码与之前相同) ---
-    connect(courseScheduleButton, &QPushButton::clicked, this, &MainWindow::onCourseScheduleButtonClicked);
-    connect(studySessionButton, &QPushButton::clicked, this, &MainWindow::onStudySessionButtonClicked);
-    connect(statisticsButton, &QPushButton::clicked, this, &MainWindow::onStatisticsButtonClicked);
-    connect(reminderButton, &QPushButton::clicked, this, &MainWindow::onReminderButtonClicked);
-    connect(calendarWidget, &QCalendarWidget::clicked, this, &MainWindow::onDateSelected);
-    connect(addDailyTaskButton, &QPushButton::clicked, this, &MainWindow::onAddDailyTaskClicked);
+    // 连接信号和槽
+    connect(courseScheduleButton, &QPushButton::clicked,
+            this, &MainWindow::onCourseScheduleButtonClicked);
+    connect(studySessionButton, &QPushButton::clicked,
+            this, &MainWindow::onStudySessionButtonClicked);
+    connect(statisticsButton, &QPushButton::clicked,
+            this, &MainWindow::onStatisticsButtonClicked);
+    connect(reminderButton, &QPushButton::clicked,
+            this, &MainWindow::onReminderButtonClicked);
+    connect(calendarWidget, &QCalendarWidget::clicked,
+            this, &MainWindow::onDateSelected);
+    connect(addDailyTaskButton, &QPushButton::clicked,
+            this, &MainWindow::onAddDailyTaskClicked);
 
-    // --- 5.【关键修正】应用更精确的QSS样式表 ---
+    // 应用样式表
     QString styleSheet = R"(
         /* 全局字体和背景 */
         QWidget {
@@ -205,10 +200,9 @@ void MainWindow::setupUiLooks()
         }
         /* 日历控件样式 */
         QCalendarWidget QTableView {
-            /* 移除 alternate-background-color，确保所有日期背景统一 */
             background-color: #FFFFFF;
         }
-        /* 【新增】将不属于本月的日期文字颜色设置为淡灰色 */
+        /* 不属于本月的日期文字样式 */
         QCalendarWidget QTableView::item:disabled {
             color: #d3d3d3;
         }
@@ -232,11 +226,21 @@ void MainWindow::setupUiLooks()
         QCalendarWidget #qt_calendar_navigationbar {
             background-color: #F8F9FA;
         }
-        /* 其他控件样式保持不变 */
-        #addDailyTaskButton { background-color: #007BFF; text-align: center; }
-        #addDailyTaskButton:hover { background-color: #0069D9; }
-        #reminderButton { background-color: #17A2B8; }
-        #reminderButton:hover { background-color: #138496; }
+        /* 特定按钮样式 */
+        #addDailyTaskButton {
+            background-color: #007BFF;
+            text-align: center;
+        }
+        #addDailyTaskButton:hover {
+            background-color: #0069D9;
+        }
+        #reminderButton {
+            background-color: #17A2B8;
+        }
+        #reminderButton:hover {
+            background-color: #138496;
+        }
+        /* 文本编辑框样式 */
         QTextEdit {
             background-color: #FFFFFF;
             border: 1px solid #CED4DA;
@@ -251,8 +255,6 @@ void MainWindow::setupUiLooks()
     reminderButton->setObjectName("reminderButton");
 }
 
-
-// ==============【整合】添加 onReminderButtonClicked 函数的实现 ==============
 void MainWindow::onReminderButtonClicked()
 {
     QList<QDate> datesWithTasks = DatabaseManager::instance().getAllDatesWithTasks();
@@ -260,30 +262,35 @@ void MainWindow::onReminderButtonClicked()
     dialog.exec();
 }
 
-
-// ============== 其余函数保持不变 ==============
-
 void MainWindow::updateCalendarHighlights()
 {
+    // 清除旧的高亮
     for (const QDate &date : m_highlightedDates) {
         calendarWidget->setDateTextFormat(date, QTextCharFormat());
     }
     m_highlightedDates.clear();
+
+    // 获取有任务的日期并设置新样式
     QList<QDate> datesWithTasks = DatabaseManager::instance().getAllDatesWithTasks();
     const QDate today = QDate::currentDate();
+
     for (const QDate &taskDate : datesWithTasks) {
         if (taskDate < today) continue;
+
         qint64 daysUntil = today.daysTo(taskDate);
         QTextCharFormat format;
         format.setFontWeight(QFont::Bold);
         format.setForeground(Qt::black);
+
+        // 根据剩余天数设置不同背景色
         if (daysUntil >= 15) {
-            format.setBackground(QColor("#C8E6C9"));
+            format.setBackground(QColor("#C8E6C9")); // 绿色
         } else if (daysUntil >= 7) {
-            format.setBackground(QColor("#FFF9C4"));
+            format.setBackground(QColor("#FFF9C4")); // 黄色
         } else {
-            format.setBackground(QColor("#FFCDD2"));
+            format.setBackground(QColor("#FFCDD2")); // 红色
         }
+
         calendarWidget->setDateTextFormat(taskDate, format);
         m_highlightedDates.insert(taskDate);
     }
@@ -315,26 +322,37 @@ void MainWindow::onStatisticsButtonClicked()
     statsWindow->raise();
 }
 
-void MainWindow::onDateSelected(const QDate &date) {
+void MainWindow::onDateSelected(const QDate &date)
+{
     currentSelectedDate = date;
     detailTextEdit->clear();
+
+    // 获取选定日期的任务
     QList<DailyTask> tasks = DatabaseManager::instance().getTasksForDate(date);
+
     if (tasks.isEmpty()) {
-        detailTextEdit->setHtml(QString("<h3>%1</h3><p>这一天还没有任务。</p>").arg(date.toString("yyyy年MM月dd日")));
+        detailTextEdit->setHtml(
+            QString("<h3>%1</h3><p>这一天还没有任务。</p>")
+                .arg(date.toString("yyyy年MM月dd日"))
+            );
     } else {
-        QString html = QString("<h3>%1 的日程：</h3>").arg(date.toString("yyyy年MM月dd日"));
+        QString html = QString("<h3>%1 的日程：</h3>")
+                           .arg(date.toString("yyyy年MM月dd日"));
+
+        // 格式化每个任务的信息
         for (const DailyTask &task : tasks) {
             html += QString(
                         "<hr>"
                         "<p><b>标题:</b> %1<br>"
                         "<b>时间:</b> %2 - %3<br>"
-                        "<b>备注:</b> %4</p>")
+                        "<b>备注:</b> %4</p>"
+                        )
                         .arg(task.getTitle())
                         .arg(task.getStartTime().toString("HH:mm"))
-                        // 【关键修正】将 posture_correction_data.getEndTime() 修改为 task.getEndTime()
                         .arg(task.getEndTime().toString("HH:mm"))
                         .arg(task.getNote().isEmpty() ? "无" : task.getNote());
         }
+
         detailTextEdit->setHtml(html);
     }
 }
@@ -344,13 +362,15 @@ void MainWindow::onAddDailyTaskClicked()
     QList<DailyTask> tasks = DatabaseManager::instance().getTasksForDate(currentSelectedDate);
     DailyTaskDialog dialog(currentSelectedDate, this, tasks);
     dialog.exec();
+
+    // 更新UI显示
     onDateSelected(currentSelectedDate);
     updateCalendarHighlights();
 }
 
-// 从 phraseList 随机选一句，重置状态
 void MainWindow::selectNextPhrase()
 {
+    // 随机选择一条语句
     int idx = QRandomGenerator::global()->bounded(phraseList.size());
     currentPhrase  = phraseList.at(idx);
     typewriterPos  = 0;
@@ -358,43 +378,40 @@ void MainWindow::selectNextPhrase()
     headerLabel->clear();
 }
 
-// 启动（或重启）打字机定时器
 void MainWindow::startTypewriter(int intervalMs)
 {
-    if (typewriterTimer->isActive())
+    if (typewriterTimer->isActive()) {
         typewriterTimer->stop();
+    }
     typewriterTimer->start(intervalMs);
 }
 
-// 定时器回调：打字或删除一步
 void MainWindow::onTypewriterTimeout()
 {
-    // ==== 打字阶段 ====
+    // 打字阶段
     if (!deletingPhase) {
         if (typewriterPos < currentPhrase.length()) {
-            // 追加下一个字符
             headerLabel->setText(
                 headerLabel->text() + currentPhrase.at(typewriterPos)
                 );
             ++typewriterPos;
         } else {
-            // 打完了：暂停一下，再进入删除阶段
+            // 完成打字后暂停1秒进入删除阶段
             typewriterTimer->stop();
             QTimer::singleShot(1000, this, [this]() {
                 deletingPhase = true;
-                startTypewriter(30); // 删除字符的速度 30ms
+                startTypewriter(30);
             });
         }
     }
-    // ==== 删除阶段 ====
+    // 删除阶段
     else {
         QString txt = headerLabel->text();
         if (!txt.isEmpty()) {
-            // 每次去掉最后一个字符
             txt.chop(1);
             headerLabel->setText(txt);
         } else {
-            // 全删完了：暂停一下，再开始下一句
+            // 完成删除后暂停0.5秒选择新语句
             typewriterTimer->stop();
             QTimer::singleShot(500, this, [this]() {
                 selectNextPhrase();

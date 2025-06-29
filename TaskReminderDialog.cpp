@@ -21,7 +21,8 @@ void TaskReminderDialog::setupUiAndLogic(const QList<QDate> &taskDates)
     reminderTextEdit->setReadOnly(true);
 
     closeButton = new QPushButton("关闭", this);
-    connect(closeButton, &QPushButton::clicked, this, &TaskReminderDialog::accept);
+    connect(closeButton, &QPushButton::clicked,
+            this, &TaskReminderDialog::accept);
 
     // --- 布局 ---
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -48,11 +49,11 @@ void TaskReminderDialog::setupUiAndLogic(const QList<QDate> &taskDates)
     // 2. 生成HTML内容
     QString htmlContent = "<h1>未来日程一览</h1><hr>";
 
-    if(futureDates.isEmpty()){
+    if (futureDates.isEmpty()) {
         htmlContent += "<p>未来没有任何已安排的日程。</p>";
     } else {
         htmlContent += "<p>您在以下日期安排了任务：</p><ul>";
-        for(const QDate& date : futureDates){
+        for (const QDate& date : futureDates) {
             qint64 daysUntil = today.daysTo(date);
             QString style;
             QString distanceText;

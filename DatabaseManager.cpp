@@ -2,7 +2,6 @@
 
 DatabaseManager::DatabaseManager() {}
 
-
 // 【新增】删除所有自习记录的实现
 bool DatabaseManager::deleteAllStudySessions()
 {
@@ -20,6 +19,7 @@ bool DatabaseManager::deleteAllStudySessions()
     query.exec("VACUUM");
     return true;
 }
+
 QList<QDate> DatabaseManager::getAllDatesWithTasks() const
 {
     QList<QDate> dates;
@@ -32,13 +32,15 @@ QList<QDate> DatabaseManager::getAllDatesWithTasks() const
     }
     return dates;
 }
+
 DatabaseManager& DatabaseManager::instance()
 {
     static DatabaseManager instance;
     return instance;
 }
 
-bool DatabaseManager::init() {
+bool DatabaseManager::init()
+{
     db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName("tasks.db");
     if (!db.open()) {
@@ -58,13 +60,14 @@ bool DatabaseManager::init() {
         )
     )";
     QString createStudyTable = R"(
-    CREATE TABLE IF NOT EXISTS study_sessions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        start_time TEXT,
-        end_time TEXT,
-        duration_seconds INTEGER
-    )
+        CREATE TABLE IF NOT EXISTS study_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            start_time TEXT,
+            end_time TEXT,
+            duration_seconds INTEGER
+        )
     )";
+
     // 执行创建 study_sessions 表
     if (!query.exec(createStudyTable)) {
         qDebug() << "创建 study_sessions 表失败：" << query.lastError().text();
@@ -80,8 +83,8 @@ bool DatabaseManager::init() {
     return true;
 }
 
-
-bool DatabaseManager::addDailyTask(const QDate &date, DailyTask &task) {
+bool DatabaseManager::addDailyTask(const QDate &date, DailyTask &task)
+{
     QSqlQuery query;
     query.prepare("INSERT INTO tasks (date, title, start_time, end_time, note) VALUES (?, ?, ?, ?, ?)");
     query.addBindValue(date.toString(Qt::ISODate));
@@ -89,6 +92,7 @@ bool DatabaseManager::addDailyTask(const QDate &date, DailyTask &task) {
     query.addBindValue(task.getStartTime().toString("HH:mm"));
     query.addBindValue(task.getEndTime().toString("HH:mm"));
     query.addBindValue(task.getNote());
+
     bool success = query.exec();
     if (success) {
         task.setId(query.lastInsertId().toInt());  // ✅ 设置返回的 ID
@@ -98,11 +102,13 @@ bool DatabaseManager::addDailyTask(const QDate &date, DailyTask &task) {
     return success;
 }
 
-QList<DailyTask> DatabaseManager::getTasksForDate(const QDate &date) {
+QList<DailyTask> DatabaseManager::getTasksForDate(const QDate &date)
+{
     QList<DailyTask> tasks;
     QSqlQuery query;
     query.prepare("SELECT title, start_time, end_time, note, id FROM tasks WHERE date = ?");
     query.addBindValue(date.toString(Qt::ISODate));
+
     if (query.exec()) {
         while (query.next()) {
             QString title = query.value(0).toString();
@@ -118,12 +124,12 @@ QList<DailyTask> DatabaseManager::getTasksForDate(const QDate &date) {
     return tasks;
 }
 
-
 bool DatabaseManager::deleteTaskById(int id)
 {
     QSqlQuery query;
     query.prepare("DELETE FROM tasks WHERE id = ?");
     query.addBindValue(id); // 绑定id
+
     if (!query.exec()) {
         qDebug() << "删除任务失败：" << query.lastError().text();
         return false;
@@ -131,7 +137,8 @@ bool DatabaseManager::deleteTaskById(int id)
     return true;
 }
 
-bool DatabaseManager::updateTaskById(int id, const DailyTask &task) {
+bool DatabaseManager::updateTaskById(int id, const DailyTask &task)
+{
     QSqlQuery query;
     query.prepare(R"(
         UPDATE tasks

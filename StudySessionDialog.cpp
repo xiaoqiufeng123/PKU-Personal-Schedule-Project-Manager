@@ -35,7 +35,8 @@ StudySessionDialog::StudySessionDialog(QWidget *parent)
     // gifLabel->installEventFilter(this); // 如果没有其他过滤需求，可以移除此行
 
     endButton = new QPushButton("结束自习", this);
-    connect(endButton, &QPushButton::clicked, this, &StudySessionDialog::onEndSessionClicked);
+    connect(endButton, &QPushButton::clicked,
+            this, &StudySessionDialog::onEndSessionClicked);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(20, 20, 20, 20);
@@ -50,7 +51,8 @@ StudySessionDialog::StudySessionDialog(QWidget *parent)
     startTime = QTime::currentTime(); // 初始化为当前时间
     timerLabel->setText("00:00:00");
 
-    connect(timer, &QTimer::timeout, this, &StudySessionDialog::updateTimer);
+    connect(timer, &QTimer::timeout,
+            this, &StudySessionDialog::updateTimer);
     timer->start(1000);
 }
 
@@ -60,10 +62,12 @@ void StudySessionDialog::updateTimer()
     int hours = elapsed / 3600;
     int minutes = (elapsed % 3600) / 60;
     int seconds = elapsed % 60;
-    timerLabel->setText(QString("%1:%2:%3")
-                            .arg(hours, 2, 10, QChar('0'))
-                            .arg(minutes, 2, 10, QChar('0'))
-                            .arg(seconds, 2, 10, QChar('0')));
+    timerLabel->setText(
+        QString("%1:%2:%3")
+            .arg(hours, 2, 10, QChar('0'))
+            .arg(minutes, 2, 10, QChar('0'))
+            .arg(seconds, 2, 10, QChar('0'))
+        );
 }
 
 void StudySessionDialog::onEndSessionClicked()
@@ -84,7 +88,9 @@ void StudySessionDialog::onEndSessionClicked()
 void StudySessionDialog::saveStudySession(const QDateTime &start, const QDateTime &end)
 {
     int durationSeconds = start.secsTo(end);
-    qDebug() << "自习开始:" << start.toString(Qt::ISODate) << " 结束:" << end.toString(Qt::ISODate) << " 时长(秒):" << durationSeconds;
+    qDebug() << "自习开始:" << start.toString(Qt::ISODate)
+             << " 结束:" << end.toString(Qt::ISODate)
+             << " 时长(秒):" << durationSeconds;
 
     // 假设 DatabaseManager::instance().addStudySession 方法存在
     DatabaseManager::instance().addStudySession(start, end, durationSeconds);
