@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/Lancer_emote.jpg</file>
+        <file>images/Ralsei_emote.gif</file>
+        <file>images/Ralsei_emote.webp</file>
+        <file>images/lancer.jpg</file>
+        <file>images/lancer_hover.jpg</file>
+        <file>images/Lancer_item.webp</file>
+        <file>images/lancer_mainwindow.gif</file>
+        <file>images/Ralsei_studydialog.webp</file>
+        <file>images/Ralsei_study_dialog.gif</file>
+        <file>images/lancer_main_window_160.gif</file>
+    </qresource>
+</RCC>
